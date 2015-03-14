@@ -29,6 +29,10 @@ public class VertexArray {
         indicesData.put(indices);
         indicesData.flip();
 
+//        ByteBuffer indicesData = BufferUtils.createByteBuffer(indices.length);
+//        indicesData.put(indices);
+//        indicesData.flip();
+
         vao = glGenVertexArrays();
         glBindVertexArray(vao);
 

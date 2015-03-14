@@ -59,7 +59,7 @@ public class Space implements Runnable {
 
         String dumpName = "test";
         controlCenter = new ControlCenter(ControlCenter.Mode.DUMP);
-//        controlCenter.createDump("Main_50y", 50*365*24*3600, 1024, 3600*24, controlCenter.initPlanets());
+//        controlCenter.createDump("Main_10y", 10*365*24*3600, 1024, 24*3600, controlCenter.initPlanets());
 
         /* Tell it:
         - What Dump file to use
@@ -69,7 +69,7 @@ public class Space implements Runnable {
             - Maybe starting parameters(default) for planets
         */
 
-        controlCenter.useDump("Main_50y");
+        controlCenter.useDump("Main_10y");
         controlCenter.setCurrentStep(0);
         Planet.positionDivider = 1.1f * controlCenter.getMaxRemoteness() / (maxViewingDistance / 2.0f);
 
@@ -148,7 +148,7 @@ public class Space implements Runnable {
             }
             planets.get(i).update(dataset.getPlanet(i));
             float scaler = (float) (Math.sqrt(Math.sqrt(radius / Planet.positionDivider)));
-            System.out.println(scaler);
+//            System.out.println("Scaler:" + scaler);
             planets.get(i).scale(new Vector3f(0.2f, 0.2f, 0.2f));
             planets.get(i).scale(new Vector3f(scaler * 1.0f, scaler * 1.0f, scaler * 1.0f));
         }
@@ -168,7 +168,7 @@ public class Space implements Runnable {
 
     private void prepareRenderingSettings() {
         glViewport(0, 0, WIDTH, HEIGHT);
-//        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glEnable(GL_DEPTH_TEST);
 //        glEnable(GL_BLEND);
 //        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -227,6 +227,9 @@ public class Space implements Runnable {
         InputMouse.dx = 0.0f;
         InputMouse.dy = 0.0f;
 
+        if (Input.keys[GLFW_KEY_0]) {
+            camera.setMovementSpeed0();
+        }
         if (Input.keys[GLFW_KEY_1]) {
             camera.setMovementSpeed1();
         }
@@ -308,6 +311,7 @@ public class Space implements Runnable {
                 planets.get(i).update(dataset.getPlanet(i));
             }
             controlCenter.incCurrentStep();
+//            System.out.println(controlCenter.getCurrentSecond());
         }
 
         Shader.main.enable();

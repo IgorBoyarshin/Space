@@ -1,10 +1,14 @@
 import utils.*;
 
+import java.io.File;
+import java.io.IOException;
+
 /**
  * Created by Igor on 07-Mar-15.
  */
 public class Planet {
-    private static VertexArray object;
+    private static VertexArray2 object;
+//    private static VertexArray object;
 
     public static double positionDivider = 1.0f;
 
@@ -21,15 +25,26 @@ public class Planet {
     public static final int MODE_MAIN = 0;
     public static final int MODE_COORDINATES = 1;
 
+    // TODO: Normals
     public Planet(int mode, final String name, Vector3f color) {
-//        super(mode, generatePlanetVertices(), generatePlanetIndices());
-//        super(mode);
-
         this.name = name;
         this.mode = mode;
         this.color = color;
 
-        object = new VertexArray(generatePlanetVertices(), generatePlanetIndices());
+        Model model = null;
+        String modelName = "planet.obj";
+        try {
+            model = OBJLoader.loadModel(new File("models//" + modelName));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (model == null) {
+            System.err.print("Could not load model '" + modelName + "'");
+            object = new VertexArray2(generateBoxVertices(), generateBoxIndices());
+        } else {
+            object = new VertexArray2(model.getVerticesArray(), model.getVertexIndicesArray());
+        }
     }
 
     // Scales the actual position to be within the 1.0 box(a little bigger)
@@ -96,7 +111,7 @@ public class Planet {
         Shader.main.disable();
     }
 
-    private static float[] generatePlanetVertices() {
+    private static float[] generateBoxVertices() {
         float[] vertices = new float[]{
                 1.0f, 1.0f, 1.0f,
                 1.0f, 1.0f, -1.0f,
@@ -117,8 +132,8 @@ public class Planet {
         return vertices;
     }
 
-    private static byte[] generatePlanetIndices() {
-        byte[] indices = new byte[]{
+    private static short[] generateBoxIndices() {
+        short[] indices = new short[]{
                 0, 1, 2,
                 0, 2, 3,
 

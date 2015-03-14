@@ -8,6 +8,7 @@ public class Camera {
     private static float movementSpeed = 0.14f;
     private static final float rotationSpeed = 0.005f;
 
+    private static final float movementSpeed0 = 0.14f * 0.3f;
     private static final float movementSpeed1 = 0.14f * 1.0f;
     private static final float movementSpeed2 = 0.14f * 3.0f;
     private static final float movementSpeed3 = 0.14f * 5.0f;
@@ -23,6 +24,10 @@ public class Camera {
         this.position = position;
         this.pitch = pitch;
         this.yaw = yaw;
+    }
+
+    public void setMovementSpeed0() {
+        movementSpeed = movementSpeed0;
     }
 
     public void setMovementSpeed1() {

@@ -16,25 +16,28 @@ public class Model {
 
     }
 
-    public List<Vector3s> getVertexIndices() {
-        List<Vector3s> indices = new ArrayList<>();
-
-        for (Face face : faces) {
-            indices.add(face.vertex);
-        }
-
-        return indices;
-    }
-
     public float[] getVerticesArray() {
         float[] array = new float[vertices.size() * 3];
 
-        for (int i = 0; i < 3 * vertices.size(); i += 3) {
-            Vector3f vector = vertices.get(i/3);
+        for (int i = 0; i < vertices.size(); i++) {
+            Vector3f vector = vertices.get(i);
 
-            array[i] = vector.x;
-            array[i + 1] = vector.y;
-            array[i + 2] = vector.z;
+            array[3 * i] = vector.x;
+            array[3 * i + 1] = vector.y;
+            array[3 * i + 2] = vector.z;
+        }
+
+        return array;
+    }
+
+    public float[] getNormalsArray() {
+        float[] array = new float[faces.size() * 3];
+
+        for (int i = 0; i < faces.size(); i++) {
+            short n = faces.get(i).normal.x;
+            array[i * 3] = normals.get(n-1).x;
+            array[i * 3 + 1] = normals.get(n-1).y;
+            array[i * 3 + 2] = normals.get(n-1).z;
         }
 
         return array;
@@ -43,12 +46,12 @@ public class Model {
     public short[] getVertexIndicesArray() {
         short[] array = new short[faces.size() * 3];
 
-        for (int i = 0; i < 3 * faces.size(); i += 3) {
-            Vector3s vector = faces.get(i/3).vertex;
+        for (int i = 0; i < faces.size(); i++) {
+            Vector3s vector = faces.get(i).vertex;
 
-            array[i] = vector.x;
-            array[i + 1] = vector.y;
-            array[i + 2] = vector.z;
+            array[3 * i] = vector.x;
+            array[3 * i + 1] = vector.y;
+            array[3 * i + 2] = vector.z;
         }
 
         return array;

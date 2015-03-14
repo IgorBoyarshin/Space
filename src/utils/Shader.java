@@ -13,6 +13,7 @@ public class Shader {
     public static Shader main;
 
     public static final int ATTR_VERTEX = 0;
+    public static final int ATTR_NORMAL = 1;
 
     private Map<String, Integer> locationCache = new HashMap<String, Integer>();
 

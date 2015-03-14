@@ -1,6 +1,7 @@
 #version 330
 
 layout(location = 0) in vec4 position;
+layout(location = 1) in vec3 normal;
 
 smooth out vec4 theColor;
 
@@ -12,8 +13,11 @@ uniform vec3 color;
 
 void main()
 {
-    vec4 cameraPos = camera * objectMatrix * position;
+    vec4 obj = objectMatrix * position;
+    vec4 cameraPos = camera * obj;
     gl_Position = perspectiveMatrix * cameraPos;
 
-    theColor = vec4(color.x, color.y, color.z, 1.0);
+    float cosNormal = clamp( dot(normal, vec3(-obj.x, -obj.y, -obj.z)), 0, 1);
+
+    theColor = vec4(color * cosNormal, 1.0);
 }

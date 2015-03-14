@@ -41,9 +41,9 @@ public class Planet {
 
         if (model == null) {
             System.err.print("Could not load model '" + modelName + "'");
-            object = new VertexArray2(generateBoxVertices(), generateBoxIndices());
+//            object = new VertexArray2(generateBoxVertices(), generateBoxIndices());
         } else {
-            object = new VertexArray2(model.getVerticesArray(), model.getVertexIndicesArray());
+            object = new VertexArray2(model.getVerticesArray(), model.getVertexIndicesArray(), model.getNormalsArray());
         }
     }
 

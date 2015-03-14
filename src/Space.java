@@ -47,8 +47,7 @@ public class Space implements Runnable {
 
     // Space
     private ControlCenter controlCenter;
-    private final float maxViewingDistance = 1000.0f;
-
+    private final float maxViewingDistance = (float)Math.pow(10,3) * 1.0f;
     // Objects for rendering
     private List<Planet> planets = new ArrayList<>();
     private Object object;
@@ -128,6 +127,7 @@ public class Space implements Runnable {
 
     private void prepareGeneral() {
         camera = new Camera(new Vector3f(0.0f, 10.0f, -25.0f), 0.0f, 0.0f);
+        camera.setMovementSpeed2();
 
         object = new Object(Object.MODE_MAIN, new Vector3f(0.2f, 0.8f, 0.5f));
 
@@ -147,10 +147,12 @@ public class Space implements Runnable {
                         new Vector3f(i * 1.0f / controlCenter.getPlanetsSize(), 0.85f, 1.0f - i * 1.0f / controlCenter.getPlanetsSize())));
             }
             planets.get(i).update(dataset.getPlanet(i));
+//            float scaler = (float) (radius / Planet.positionDivider);
+//            float scaler = (float) (Math.sqrt(radius / Planet.positionDivider));
             float scaler = (float) (Math.sqrt(Math.sqrt(radius / Planet.positionDivider)));
-//            System.out.println("Scaler:" + scaler);
-            planets.get(i).scale(new Vector3f(0.2f, 0.2f, 0.2f));
-            planets.get(i).scale(new Vector3f(scaler * 1.0f, scaler * 1.0f, scaler * 1.0f));
+//            System.out.println("Scaler: " + scaler);
+//            planets.get(i).scale(new Vector3f(0.2f, 0.2f, 0.2f));
+            planets.get(i).scale(new Vector3f(scaler * 5.0f, scaler * 5.0f, scaler * 5.0f));
         }
     }
 
@@ -168,7 +170,7 @@ public class Space implements Runnable {
 
     private void prepareRenderingSettings() {
         glViewport(0, 0, WIDTH, HEIGHT);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+//        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glEnable(GL_DEPTH_TEST);
 //        glEnable(GL_BLEND);
 //        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -238,6 +240,9 @@ public class Space implements Runnable {
         }
         if (Input.keys[GLFW_KEY_3]) {
             camera.setMovementSpeed3();
+        }
+        if (Input.keys[GLFW_KEY_4]) {
+            camera.setMovementSpeed4();
         }
 
         if (Input.keys[GLFW_KEY_U]) {

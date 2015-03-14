@@ -184,6 +184,7 @@ public class ControlCenter {
         }
 
         return max;
+//        return Math.sqrt(distanceScrBetween(new Vector3d(), currentDump.getPlanet(5).getPosition(0)));
     }
 
     private double distanceScrBetween(Vector3d a, Vector3d b) {

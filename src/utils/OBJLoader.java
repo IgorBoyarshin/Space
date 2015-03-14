@@ -32,7 +32,6 @@ public class OBJLoader {
                         Short.valueOf(line.split(" ")[2].split("/")[2]),
                         Short.valueOf(line.split(" ")[3].split("/")[2]));
                 m.faces.add(new Face(vertexIndex, normalIndex));
-//                System.out.println("Face: " + vertexIndex.x + " " + vertexIndex.y + " " + vertexIndex.z);
             }
         }
 

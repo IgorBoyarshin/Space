@@ -22,8 +22,9 @@ public class VertexArray2 {
     private int count;
 
     private int vao, vbo, ibo;
+    private int nbo;
 
-    public VertexArray2(float vertices[], short[] indices) {
+    public VertexArray2(float vertices[], short[] indices, float normals[]) {
         count = indices.length;
 
         FloatBuffer vertexData = BufferUtils.createFloatBuffer(vertices.length);
@@ -34,6 +35,10 @@ public class VertexArray2 {
         indicesData.put(indices);
         indicesData.flip();
 
+        FloatBuffer normalData = BufferUtils.createFloatBuffer(normals.length);
+        normalData.put(normals);
+        normalData.flip();
+
         vao = glGenVertexArrays();
         glBindVertexArray(vao);
 
@@ -42,6 +47,12 @@ public class VertexArray2 {
         glBufferData(GL_ARRAY_BUFFER, vertexData, GL_STATIC_DRAW);
         glEnableVertexAttribArray(Shader.ATTR_VERTEX);
         glVertexAttribPointer(Shader.ATTR_VERTEX, 3, GL_FLOAT, false, 0, 0);
+
+        nbo = glGenBuffers();
+        glBindBuffer(GL_ARRAY_BUFFER, nbo);
+        glBufferData(GL_ARRAY_BUFFER, normalData, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(Shader.ATTR_NORMAL);
+        glVertexAttribPointer(Shader.ATTR_NORMAL, 3, GL_FLOAT, false, 0, 0);
 
         ibo = glGenBuffers();
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);

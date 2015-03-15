@@ -81,7 +81,7 @@ public class Space implements Runnable {
 //        controlCenter.calculateForObjects(controlCenter.initSunAndEarth(), 1);
         controlCenter.calculateForObjects(controlCenter.initSunAndEarth(), 24*3600);
 
-        settings = Settings.ALL_VISIBLE;
+        settings = Settings.REALISTIC;
 
         renderingThreadRunning = true;
         renderingThread = new Thread(this, "Space Rendering");

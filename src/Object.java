@@ -1,13 +1,13 @@
-import utils.Matrix4f;
-import utils.Shader;
-import utils.Vector3f;
-import utils.VertexArray;
+import utils.*;
+
+import java.io.File;
+import java.io.IOException;
 
 /**
  * Created by Igor on 01-Mar-15.
  */
 public class Object {
-    private static VertexArray object;
+    private static VertexArray2 object;
 
     private Matrix4f theObject = Matrix4f.identity();
     private Matrix4f rotation = Matrix4f.identity();
@@ -24,35 +24,20 @@ public class Object {
         this.mode = mode;
         this.color = color;
 
-        float[] vertices = new float[]{
-                1.0f, 1.0f, 1.0f,
-                1.0f, 1.0f, -1.0f,
-                1.0f, -1.0f, -1.0f,
-                1.0f, -1.0f, 1.0f,
+        Model model = null;
+        String modelName = "cube.obj";
+        try {
+            model = OBJLoader.loadModel(new File("models//" + modelName));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-                -1.0f, 1.0f, 1.0f,
-                -1.0f, 1.0f, -1.0f,
-                -1.0f, -1.0f, -1.0f,
-                -1.0f, -1.0f, 1.0f,
+        if (model == null) {
+            System.err.print("Could not load model '" + modelName + "'");
+        } else {
+            object = new VertexArray2(model.getVerticesArray(), model.getVertexIndicesArray(), model.getNormalsArray());
+        }
 
-                1.0f, 1.0f, 1.0f,
-                1.0f, 1.0f, -1.0f,
-                -1.0f, 1.0f, -1.0f,
-                -1.0f, 1.0f, 1.0f,
-        };
-
-        byte[] indices = new byte[]{
-                0, 1, 2,
-                0, 2, 3,
-
-                6, 5, 4,
-                6, 4, 7,
-
-                8, 11, 10,
-                8, 10, 9
-        };
-
-        object = new VertexArray(vertices, indices);
     }
 
 //    public Object(final int mode, float[] vertices, byte[] indices) {

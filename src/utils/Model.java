@@ -35,9 +35,9 @@ public class Model {
 
         for (int i = 0; i < faces.size(); i++) {
             short n = faces.get(i).normal.x;
-            array[i * 3] = normals.get(n-1).x;
-            array[i * 3 + 1] = normals.get(n-1).y;
-            array[i * 3 + 2] = normals.get(n-1).z;
+            array[i * 3] = normals.get(n - 1).x;
+            array[i * 3 + 1] = normals.get(n - 1).y;
+            array[i * 3 + 2] = normals.get(n - 1).z;
         }
 
         return array;
@@ -49,9 +49,9 @@ public class Model {
         for (int i = 0; i < faces.size(); i++) {
             Vector3s vector = faces.get(i).vertex;
 
-            array[3 * i] = vector.x;
-            array[3 * i + 1] = vector.y;
-            array[3 * i + 2] = vector.z;
+            array[3 * i] = (short) (vector.x - 1);
+            array[3 * i + 1] = (short) (vector.y - 1);
+            array[3 * i + 2] = (short) (vector.z - 1);
         }
 
         return array;

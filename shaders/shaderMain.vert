@@ -19,5 +19,5 @@ void main()
 
     float cosNormal = clamp( dot(normal, vec3(-obj.x, -obj.y, -obj.z)), 0, 1);
 
-    theColor = vec4(color * cosNormal, 1.0);
+    theColor = vec4(color * 1.0, 1.0);
 }

@@ -38,7 +38,7 @@ public class Dump {
 
     public int getMaxSecond() {
         if (planets.get(0) != null) {
-            return planets.get(0).getSize();
+            return planets.get(0).getSize() - 1;
         }
 
         return 0;

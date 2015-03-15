@@ -12,22 +12,63 @@ import java.util.Random;
 public class ControlCenter {
     private int currentStep = 0;
     private int stepDuration = 1; // In seconds
+    // Only for calculating live
+    private int applyForceDuration = 1;
+
     private Dump currentDump;
+    private List<CalculationsPlanet> calculationsPlanets;
 
     // Settings
-    private final int percentPrintFrequency = 1;
+    private static final int percentPrintFrequency = 1;
 
-    // TODO: implement live calculations
     private Mode currentMode;
 
-    public enum Mode {
+    private enum Mode {
         DUMP,
-//        LIVE_CALCULATING
+        LIVE_CALCULATING
     }
 
-    public ControlCenter(Mode mode) {
-        currentMode = mode;
+    public ControlCenter() {
+
     }
+
+    /*
+        Objects will get altered as they will be being used now
+    */
+    public void calculateForObjects(List<CalculationsPlanet> objects, int applyForceDuration) {
+        currentMode = Mode.LIVE_CALCULATING;
+        currentDump = null;
+        calculationsPlanets = objects;
+
+        this.stepDuration = 1; // Will not be used. We process every single second
+        this.currentStep = 0;
+        this.applyForceDuration = applyForceDuration;
+
+        System.out.println(":> Will process further for objects");
+        System.out.println();
+    }
+
+    public void useDump(String name) {
+        currentMode = Mode.DUMP;
+        currentDump = new Dump();
+        calculationsPlanets = null;
+
+        System.out.println(":> Will load dump '" + name + "'");
+        System.out.println();
+        currentDump.loadData("dumps//" + name + ".scd");
+
+        System.out.println();
+        System.out.println(":> Finished loading Data from '" + name + "'");
+
+        currentStep = 0;
+        stepDuration = currentDump.getSecondsInterval();
+
+        System.out.println(":> Dump '" + name + "' is now primary");
+    }
+
+    // -=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+
+    // -=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+
+    // -=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+
 
     public void createDump(String name, int seconds, int accuracy, int stepDuration, List<CalculationsPlanet> calculationsPlanets) {
         long startTime = System.currentTimeMillis();
@@ -114,6 +155,27 @@ public class ControlCenter {
 //        System.out.println();
     }
 
+    public void processNextSteps(int n) {
+        if (currentMode.equals(Mode.DUMP)) {
+            if (currentStep + n <= currentDump.getMaxSecond())
+                currentStep += n;
+        } else if (currentMode.equals(Mode.LIVE_CALCULATING)) {
+            for (int i = 0; i < n; i++) {
+                processNextSecond();
+            }
+        }
+    }
+
+    // To be used while calculating live
+    private void processNextSecond() {
+        if (currentStep % applyForceDuration == 0) {
+            processNextSecond(calculationsPlanets, true);
+        } else {
+            processNextSecond(calculationsPlanets, false);
+        }
+    }
+
+    // To be used while creating a dump
     private void processNextSecond(List<CalculationsPlanet> calculationsPlanets, boolean applyForce) {
         if (applyForce) {
             for (int i = 0; i < calculationsPlanets.size(); i++) {
@@ -171,20 +233,48 @@ public class ControlCenter {
         return force;
     }
 
-    // TODO: this is only for dumps
-    public double getMaxRemoteness() {
-//        double NeptuneMax = 4.4966e12d;
-//        return NeptuneMax;
+    public double getBiggestObjectRadius() {
         double max = 1.0f;
-        for (int i = 0; i < currentDump.getAmountOfPlanets(); i++) {
-            double distanceScr = distanceScrBetween(new Vector3d(), currentDump.getPlanet(i).getPosition(0));
-            if (distanceScr > max) {
-                max = Math.sqrt(distanceScr);
+
+        if (currentMode.equals(Mode.DUMP)) {
+            for (int i = 0; i < currentDump.getAmountOfPlanets(); i++) {
+                double radius = currentDump.getPlanet(i).getRadius();
+                if (radius > max) {
+                    max = radius;
+                }
+            }
+        } else if (currentMode.equals(Mode.LIVE_CALCULATING)) {
+            for (int i = 0; i < calculationsPlanets.size(); i++) {
+                double radius = calculationsPlanets.get(i).getRadius();
+                if (radius > max) {
+                    max = radius;
+                }
             }
         }
 
         return max;
-//        return Math.sqrt(distanceScrBetween(new Vector3d(), currentDump.getPlanet(5).getPosition(0)));
+    }
+
+    public double getMaxRemoteness() {
+        double max = 1.0f;
+
+        if (currentMode.equals(Mode.DUMP)) {
+            for (int i = 0; i < currentDump.getAmountOfPlanets(); i++) {
+                double distanceScr = distanceScrBetween(new Vector3d(), currentDump.getPlanet(i).getPosition(0));
+                if (distanceScr > max) {
+                    max = distanceScr;
+                }
+            }
+        } else if (currentMode.equals(Mode.LIVE_CALCULATING)) {
+            for (int i = 0; i < calculationsPlanets.size(); i++) {
+                double distanceScr = distanceScrBetween(new Vector3d(), calculationsPlanets.get(i).getPosition());
+                if (distanceScr > max) {
+                    max = distanceScr;
+                }
+            }
+        }
+
+        return Math.sqrt(max);
     }
 
     private double distanceScrBetween(Vector3d a, Vector3d b) {
@@ -195,29 +285,21 @@ public class ControlCenter {
         return (dx * dx + dy * dy + dz * dz);
     }
 
-    public void useDump(String name) {
-        currentDump = new Dump();
-        System.out.println();
-        System.out.println(":> Will load dump '" + name + "'");
-        System.out.println();
-        currentDump.loadData("dumps//" + name + ".scd");
-
-        System.out.println();
-        System.out.println(":> Finished loading Data from '" + name + "'");
-
-        currentStep = 0;
-        stepDuration = currentDump.getSecondsInterval();
-
-        System.out.println(":> Dump '" + name + "' is now primary");
-        System.out.println();
-    }
-
     public DumpPlanet getDumpPlanet(int planetId) {
-        return currentDump.getPlanet(planetId);
+        if (currentDump != null) {
+            return currentDump.getPlanet(planetId);
+        }
+        return null;
     }
 
     public int getPlanetsSize() {
-        return currentDump.getAmountOfPlanets();
+        if (currentMode.equals(Mode.DUMP)) {
+            return currentDump.getAmountOfPlanets();
+        } else if (currentMode.equals(Mode.LIVE_CALCULATING)) {
+            return calculationsPlanets.size();
+        }
+
+        return -1;
     }
 
     public int getStepDuration() {
@@ -234,41 +316,80 @@ public class ControlCenter {
 
     public void setCurrentStep(int step) {
         if (currentMode.equals(Mode.DUMP)) {
-            currentStep = step;
+            if (step >= 0 && step <= currentDump.getMaxSecond()) {
+                currentStep = step;
+            }
         }
     }
 
     public void incCurrentStep() {
-//        if (currentMode.equals(Mode.DUMP)) {
-//            currentStep += currentDump.getSecondsInterval();
-//        }
-        if (currentStep < currentDump.getMaxSecond()) {
+        if (currentMode.equals(Mode.DUMP)) {
+            if (currentStep < currentDump.getMaxSecond()) {
+                currentStep++;
+            }
+        } else if (currentMode.equals(Mode.LIVE_CALCULATING)) {
             currentStep++;
+            processNextSecond();
         }
+    }
+
+    public String getPlanetName(int id) {
+        if (currentMode.equals(Mode.DUMP)) {
+            if (id < currentDump.getAmountOfPlanets()) {
+                return currentDump.getPlanet(id).getName();
+            }
+        } else if (currentMode.equals(Mode.LIVE_CALCULATING)) {
+            if (id < calculationsPlanets.size()) {
+                return calculationsPlanets.get(id).getName();
+            }
+        }
+
+        return "";
+    }
+
+    public double getPlanetRadius(int id) {
+        if (currentMode.equals(Mode.DUMP)) {
+            if (id < currentDump.getAmountOfPlanets()) {
+                return currentDump.getPlanet(id).getRadius();
+            }
+        } else if (currentMode.equals(Mode.LIVE_CALCULATING)) {
+            if (id < calculationsPlanets.size()) {
+                return calculationsPlanets.get(id).getRadius();
+            }
+        }
+
+        return -1.0d;
     }
 
     public Dataset getDatasetForStep(int step) {
         if (currentMode.equals(Mode.DUMP)) {
-            if (currentDump != null) {
-                List<Vector3d> planetsForDataset = new ArrayList<>();
-                for (int i = 0; i < currentDump.getAmountOfPlanets(); i++) {
-                    planetsForDataset.add(currentDump.getPlanet(i).getPosition(step));
-                }
-
-                return new Dataset(planetsForDataset);
+            List<Vector3d> planetsForDataset = new ArrayList<>();
+            for (int i = 0; i < currentDump.getAmountOfPlanets(); i++) {
+                planetsForDataset.add(currentDump.getPlanet(i).getPosition(step));
             }
+
+            return new Dataset(planetsForDataset);
         }
 
         return null;
     }
 
-    // TODO
     public Dataset getDatasetForThisStep() {
-//        if (currentMode == MODE_LIVE_CALCULATING) {
-//
-//        }
-        return null;
+        List<Vector3d> planetsForDataset = new ArrayList<>();
+
+        if (currentMode.equals(Mode.DUMP)) {
+            for (int i = 0; i < currentDump.getAmountOfPlanets(); i++) {
+                planetsForDataset.add(currentDump.getPlanet(i).getPosition(currentStep));
+            }
+        } else if (currentMode.equals(Mode.LIVE_CALCULATING)) {
+            for (int i = 0; i < calculationsPlanets.size(); i++) {
+                planetsForDataset.add(calculationsPlanets.get(i).getPosition());
+            }
+        }
+
+        return new Dataset(planetsForDataset);
     }
+
 
     public List<CalculationsPlanet> initRandomObjects() {
         List<CalculationsPlanet> list = new ArrayList<>();
@@ -291,13 +412,23 @@ public class ControlCenter {
         return calculationsPlanet;
     }
 
-    public List<CalculationsPlanet> initSunAndEarth() {
-        // 5601600 seconds, 64.8 days
+    public List<CalculationsPlanet> initSunAndEarthWithoutVelocity() {
+        // 5601600 seconds, ~65 days
         List<CalculationsPlanet> list = new ArrayList<>();
 
         list.add(new CalculationsPlanet("Sun", new Vector3d(), new Vector3d(), new Vector3d(), 1.989e30d, 696e6d));
         list.add(new CalculationsPlanet("Earth", new Vector3d(1.496e11d, 0.0d, 0.0d), new Vector3d(0.0d, 0.0d, 0.0d),
                 new Vector3d(), 5.976e24d, 6378e3d));
+
+        return list;
+    }
+
+    public List<CalculationsPlanet> initSunAndEarth() {
+        List<CalculationsPlanet> list = new ArrayList<>();
+
+        list.add(new CalculationsPlanet("Sun", new Vector3d(), new Vector3d(), new Vector3d(), 1.989e30d, 696e6d));
+        list.add(new CalculationsPlanet("Earth", new Vector3d(1.496e11d, 0.0d, 0.0d),
+                new Vector3d(0.0d, 0.0d, 2.979e4d), new Vector3d(), 5.976e24d, 6378e3d));
 
         return list;
     }

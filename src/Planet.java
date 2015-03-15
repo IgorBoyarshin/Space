@@ -10,7 +10,8 @@ public class Planet {
     private static VertexArray2 object;
 //    private static VertexArray object;
 
-    public static double positionDivider = 1.0f;
+    public static float distanceDivider = 1.0f;
+    public static float positionDivider = 1.0f;
 
     private final String name;
 
@@ -45,15 +46,19 @@ public class Planet {
         } else {
             object = new VertexArray2(model.getVerticesArray(), model.getVertexIndicesArray(), model.getNormalsArray());
         }
+
+        // For distance division
+//        this.scale(new Vector3f(distanceDivider, distanceDivider, distanceDivider));
+        this.scale(new Vector3f(1.0f, 1.0f, 1.0f));
     }
 
     // Scales the actual position to be within the 1.0 box(a little bigger)
     public void update(Vector3d newPosition) {
         if (newPosition != null) { // TODO: why>??
             Vector3f newPositionFloat = new Vector3f();
-            newPositionFloat.x = (float) (newPosition.x / positionDivider);
-            newPositionFloat.y = (float) (newPosition.y / positionDivider);
-            newPositionFloat.z = (float) (newPosition.z / positionDivider);
+            newPositionFloat.x = (float) (newPosition.x / distanceDivider / positionDivider);
+            newPositionFloat.y = (float) (newPosition.y / distanceDivider / positionDivider);
+            newPositionFloat.z = (float) (newPosition.z / distanceDivider / positionDivider);
             translate(newPositionFloat);
         } else {
 
@@ -77,10 +82,13 @@ public class Planet {
 
     public void scale(Vector3f vector) {
         if (mode == MODE_MAIN) {
-            scalation = scalation.multiply(Matrix4f.scale(vector));
+            scalation = scalation.multiply(Matrix4f.scale(
+                    new Vector3f(vector.x / distanceDivider, vector.y / distanceDivider, vector.z / distanceDivider)));
             recalculate();
         } else if (mode == MODE_COORDINATES) {
-            scalation = Matrix4f.scale(vector);
+//            scalation = Matrix4f.scale(vector);
+            scalation = Matrix4f.scale(
+                    new Vector3f(vector.x / distanceDivider, vector.y / distanceDivider, vector.z / distanceDivider));
         }
     }
 
@@ -110,6 +118,10 @@ public class Planet {
 
         Shader.main.disable();
     }
+
+//    public static void setPlanetDistanceDivider(float distanceDivider) {
+//        Planet.distanceDivider = distanceDivider;
+//    }
 
     private static float[] generateBoxVertices() {
         float[] vertices = new float[]{

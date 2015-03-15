@@ -27,9 +27,18 @@ public class Space implements Runnable {
     private final int HEIGHT = 600;
 
     // Settings
+    private final float maxViewingDistance = (float) Math.pow(10, 3) * 1.0f;
     private boolean calculateAndPrintFPS = false;
     private boolean showTerminal = false;
     private boolean playing = false;
+    private int speed = 24*3600;
+
+    private enum Settings {
+        REALISTIC, REALISTIC_SMALLER_DISTANCE_BIGGER_RADIUS,
+        OBJECTS, ALL_VISIBLE
+    }
+
+    private Settings settings;
 
     private Camera camera;
     private Thread renderingThread;
@@ -47,17 +56,17 @@ public class Space implements Runnable {
 
     // Space
     private ControlCenter controlCenter;
-    private final float maxViewingDistance = (float)Math.pow(10,3) * 1.0f;
+
     // Objects for rendering
     private List<Planet> planets = new ArrayList<>();
-    private Object object;
+    //    private Object object;
     private Object ground;
 
     public void start() {
         System.out.println(":> Starting the program");
 
         String dumpName = "test";
-        controlCenter = new ControlCenter(ControlCenter.Mode.DUMP);
+        controlCenter = new ControlCenter();
 //        controlCenter.createDump("Main_10y", 10*365*24*3600, 1024, 24*3600, controlCenter.initPlanets());
 
         /* Tell it:
@@ -68,9 +77,11 @@ public class Space implements Runnable {
             - Maybe starting parameters(default) for planets
         */
 
-        controlCenter.useDump("Main_10y");
-        controlCenter.setCurrentStep(0);
-        Planet.positionDivider = 1.1f * controlCenter.getMaxRemoteness() / (maxViewingDistance / 2.0f);
+//        controlCenter.useDump("Main_10y");
+//        controlCenter.calculateForObjects(controlCenter.initSunAndEarth(), 1);
+        controlCenter.calculateForObjects(controlCenter.initSunAndEarth(), 24*3600);
+
+        settings = Settings.ALL_VISIBLE;
 
         renderingThreadRunning = true;
         renderingThread = new Thread(this, "Space Rendering");
@@ -129,30 +140,70 @@ public class Space implements Runnable {
         camera = new Camera(new Vector3f(0.0f, 10.0f, -25.0f), 0.0f, 0.0f);
         camera.setMovementSpeed2();
 
-        object = new Object(Object.MODE_MAIN, new Vector3f(0.2f, 0.8f, 0.5f));
+//        object = new Object(Object.MODE_MAIN, new Vector3f(0.2f, 0.8f, 0.5f));
 
         ground = new Object(Object.MODE_MAIN, new Vector3f(0.3f, 0.1f, 0.8f));
         ground.scale(new Vector3f(maxViewingDistance / 2, maxViewingDistance / 2, maxViewingDistance / 2));
 
+        switch (settings) {
+            case OBJECTS: {
+                Planet.distanceDivider = 1000.0f;
+                Planet.positionDivider = 1.0f;
+            }
+            break;
+            case ALL_VISIBLE: {
+                Planet.distanceDivider = (float) controlCenter.getMaxRemoteness() / maxViewingDistance * 2.0f;
+                Planet.positionDivider = 1.0f;
+            }
+            break;
+            case REALISTIC_SMALLER_DISTANCE_BIGGER_RADIUS: {
+                float positionDivider = 20.0f;
+                float biggestObjectSize = 20.0f;
+                Planet.distanceDivider = (float) controlCenter.getBiggestObjectRadius() / biggestObjectSize;
+                Planet.positionDivider = positionDivider;
+            }
+            break;
+            case REALISTIC: {
+                float positionDivider = 1.0f;
+                float biggestObjectSize = 20.0f;
+                Planet.distanceDivider = (float) controlCenter.getBiggestObjectRadius() / biggestObjectSize;
+                Planet.positionDivider = positionDivider;
+            }
+            break;
+        }
+
         // Init Planets for rendering
-        Dataset dataset = controlCenter.getDatasetForStep(0);
+        Dataset dataset = controlCenter.getDatasetForThisStep();
         for (int i = 0; i < controlCenter.getPlanetsSize(); i++) {
-//            double mass = controlCenter.getDumpPlanet(i).getMass();
-            double radius = controlCenter.getDumpPlanet(i).getRadius();
+            float radius = (float) controlCenter.getPlanetRadius(i);
             if (i == 1) {
-                planets.add(new Planet(Object.MODE_COORDINATES, controlCenter.getDumpPlanet(i).getName(),
+                planets.add(new Planet(Object.MODE_COORDINATES, controlCenter.getPlanetName(i),
                         new Vector3f(1.0f, 1.0f, 1.0f)));
             } else {
-                planets.add(new Planet(Object.MODE_COORDINATES, controlCenter.getDumpPlanet(i).getName(),
-                        new Vector3f(i * 1.0f / controlCenter.getPlanetsSize(), 0.85f, 1.0f - i * 1.0f / controlCenter.getPlanetsSize())));
+                planets.add(new Planet(Object.MODE_COORDINATES, controlCenter.getPlanetName(i),
+                        new Vector3f(i * 1.0f / controlCenter.getPlanetsSize(), 0.75f, 1.0f - i * 1.0f / controlCenter.getPlanetsSize())));
             }
             planets.get(i).update(dataset.getPlanet(i));
-//            float scaler = (float) (radius / Planet.positionDivider);
-//            float scaler = (float) (Math.sqrt(radius / Planet.positionDivider));
-            float scaler = (float) (Math.sqrt(Math.sqrt(radius / Planet.positionDivider)));
-//            System.out.println("Scaler: " + scaler);
-//            planets.get(i).scale(new Vector3f(0.2f, 0.2f, 0.2f));
-            planets.get(i).scale(new Vector3f(scaler * 5.0f, scaler * 5.0f, scaler * 5.0f));
+
+            switch (settings) {
+                case OBJECTS: {
+                    planets.get(i).scale(new Vector3f(radius, radius, radius));
+                }
+                break;
+                case ALL_VISIBLE: {
+                    float r = 2.0f * (float) Math.pow(10, 8) * (float) Math.sqrt(Math.sqrt(radius));
+                    planets.get(i).scale(new Vector3f(r, r, r));
+                }
+                break;
+                case REALISTIC_SMALLER_DISTANCE_BIGGER_RADIUS: {
+                    planets.get(i).scale(new Vector3f(radius, radius, radius));
+                }
+                break;
+                case REALISTIC: {
+                    planets.get(i).scale(new Vector3f(radius, radius, radius));
+                }
+                break;
+            }
         }
     }
 
@@ -170,8 +221,9 @@ public class Space implements Runnable {
 
     private void prepareRenderingSettings() {
         glViewport(0, 0, WIDTH, HEIGHT);
-//        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glEnable(GL_DEPTH_TEST);
+
 //        glEnable(GL_BLEND);
 //        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 //        glEnable(GL_CULL_FACE);
@@ -304,19 +356,19 @@ public class Space implements Runnable {
         glfwPollEvents();
 
         keyboard();
-        object.update();
 
         if (showTerminal) {
             processTerminal();
         }
 
+        // If playing then update position and inc second for being displayed
         if (playing) {
-            Dataset dataset = controlCenter.getDatasetForStep(controlCenter.getCurrentStep());
+            controlCenter.processNextSteps(speed);
+
+            Dataset dataset = controlCenter.getDatasetForThisStep();
             for (int i = 0; i < planets.size(); i++) {
                 planets.get(i).update(dataset.getPlanet(i));
             }
-            controlCenter.incCurrentStep();
-//            System.out.println(controlCenter.getCurrentSecond());
         }
 
         Shader.main.enable();

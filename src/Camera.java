@@ -10,7 +10,7 @@ public class Camera {
 
     private static final float movementSpeed0 = 0.14f * 0.3f;
     private static final float movementSpeed1 = 0.14f * 1.0f;
-    private static final float movementSpeed2 = 0.14f * 2.0f;
+    private static final float movementSpeed2 = 0.14f * 5.0f;
     private static final float movementSpeed3 = 0.14f * 10.0f;
     private static final float movementSpeed4 = 0.14f * 50.0f;
 
@@ -18,8 +18,8 @@ public class Camera {
     private float pitch, yaw; // in radians
 
     private final float PI = 3.14159f;
-    private final float maxPitch = 0.95f * (PI / 2);
-    private final float minPitch = -0.95f * (PI / 2);
+    private final float maxPitch = 0.98f * (PI / 2);
+    private final float minPitch = -0.98f * (PI / 2);
 
     public Camera(Vector3f position, float pitch, float yaw) {
         this.position = position;

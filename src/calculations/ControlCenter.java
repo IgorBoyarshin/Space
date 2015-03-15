@@ -23,7 +23,7 @@ public class ControlCenter {
 
     private Mode currentMode;
 
-    private enum Mode {
+    public static enum Mode {
         DUMP,
         LIVE_CALCULATING
     }
@@ -244,6 +244,35 @@ public class ControlCenter {
         }
 
         return force;
+    }
+
+    public List<CalculationsPlanet> getPlanetsFromDumpForStep(int step) {
+        if (currentMode.equals(Mode.DUMP)) {
+            List<CalculationsPlanet> list = new ArrayList<>();
+            for (int i = 0; i < currentDump.getAmountOfPlanets(); i++) {
+                DumpPlanet p = currentDump.getPlanet(i);
+                CalculationsPlanet planet = new CalculationsPlanet(
+                        p.getName(), p.getPosition(step), p.getVelocity(step), p.getAcceleration(step),
+                        p.getMass(), p.getRadius());
+
+                list.add(planet);
+            }
+            return list;
+        }
+
+        return null;
+    }
+
+    public int getMaxDumpStep() {
+        if (currentMode.equals(Mode.DUMP)) {
+            return currentDump.getMaxSecond();
+        }
+
+        return -1;
+    }
+
+    public Mode getCurrentMode() {
+        return currentMode;
     }
 
     public double getBiggestObjectRadius() {

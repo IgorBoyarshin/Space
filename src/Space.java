@@ -31,10 +31,11 @@ public class Space implements Runnable {
     private boolean calculateAndPrintFPS = false;
     private boolean showTerminal = false;
     private boolean playing = false;
-    private int speed = 1;
-//    private int speed = 2*3600;
+    private final int speedDump = 1;
+    private final int speedLive = 2*3600;
+    private int speedSteps = speedDump;
     private boolean displayMarks = false;
-    private int marksStepDurationInSeconds = 20*24*3600;
+    private int marksStepDurationInSeconds = 30 * 24 * 3600;
 
     private enum Settings {
         REALISTIC, REALISTIC_SMALLER_DISTANCE_BIGGER_RADIUS,
@@ -63,7 +64,6 @@ public class Space implements Runnable {
     // Objects for rendering
     private List<Planet> planets = new ArrayList<>();
     private List<ListMarks> marks = new ArrayList<>();
-    //    private Object object;
     private Object ground;
 
     public void start() {
@@ -73,15 +73,7 @@ public class Space implements Runnable {
         controlCenter = new ControlCenter();
 //        controlCenter.createDump("Big_50y_High", 50*365*24*3600, 60, 24*3600, controlCenter.initPlanets());
 
-        /* Tell it:
-        - What Dump file to use
-        - If not, then calculating:
-            - What planets to have (ability to add and remove)
-            - Precision and stuff
-            - Maybe starting parameters(default) for planets
-        */
-
-        controlCenter.useDump("Big_50y_High");
+        controlCenter.useDump("Main_10y");
 //        controlCenter.calculateForObjects(controlCenter.initPlanets(), 1);
 //        controlCenter.calculateForObjects(controlCenter.initPlanets(), 24*3600);
         cleanMarks();
@@ -111,9 +103,6 @@ public class Space implements Runnable {
 
         glfwSetCallback(window, input);
         glfwSetCursorPosCallback(window, inputMouse);
-//        glfwSetCallback(window, new Input());
-//        glfwSetCursorPosCallback(window, new InputMouse());
-//        glfwSetCursorPos(window, WIDTH / 2.0d, HEIGHT / 2.0d);
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         glfwSetCursorPos(window, 0, 0);
 
@@ -144,8 +133,6 @@ public class Space implements Runnable {
     private void prepareGeneral() {
         camera = new Camera(new Vector3f(0.0f, 10.0f, -25.0f), 0.0f, 0.0f);
         camera.setMovementSpeed2();
-
-//        object = new Object(Object.MODE_MAIN, new Vector3f(0.2f, 0.8f, 0.5f));
 
         ground = new Object(Object.MODE_MAIN, new Vector3f(0.3f, 0.1f, 0.8f));
         ground.scale(new Vector3f(maxViewingDistance / 2, maxViewingDistance / 2, maxViewingDistance / 2));
@@ -181,13 +168,8 @@ public class Space implements Runnable {
         Dataset dataset = controlCenter.getDatasetForThisStep();
         for (int i = 0; i < controlCenter.getPlanetsSize(); i++) {
             float radius = (float) controlCenter.getPlanetRadius(i);
-            if (i == 1) {
-                planets.add(new Planet(Object.MODE_COORDINATES, controlCenter.getPlanetName(i),
-                        new Vector3f(1.0f, 1.0f, 1.0f)));
-            } else {
-                planets.add(new Planet(Object.MODE_COORDINATES, controlCenter.getPlanetName(i),
-                        new Vector3f(i * 1.0f / controlCenter.getPlanetsSize(), 0.75f, 1.0f - i * 1.0f / controlCenter.getPlanetsSize())));
-            }
+            planets.add(new Planet(Object.MODE_COORDINATES, controlCenter.getPlanetName(i),
+                    new Vector3f(1.0f - i * 1.0f / controlCenter.getPlanetsSize(), 0.25f, i * 1.0f / controlCenter.getPlanetsSize())));
             planets.get(i).update(dataset.getPlanet(i));
 
             switch (settings) {
@@ -240,6 +222,12 @@ public class Space implements Runnable {
         marks = new ArrayList<>();
         for (int i = 0; i < controlCenter.getPlanetsSize(); i++) {
             marks.add(new ListMarks());
+        }
+    }
+
+    private void moveFromDumpToLive() {
+        if (controlCenter.getCurrentMode().equals(ControlCenter.Mode.DUMP)) {
+            controlCenter.calculateForObjects(controlCenter.getPlanetsFromDumpForStep(controlCenter.getCurrentStep()), 3600);
         }
     }
 
@@ -309,11 +297,26 @@ public class Space implements Runnable {
             camera.setMovementSpeed4();
         }
 
+        if (Input.keys[GLFW_KEY_B]) {
+            moveFromDumpToLive();
+            speedSteps = speedLive;
+        }
+
         if (Input.keys[GLFW_KEY_Y] && !Input.keys[GLFW_KEY_LEFT_SHIFT]) {
             displayMarks = true;
         } else if (Input.keys[GLFW_KEY_Y] && Input.keys[GLFW_KEY_LEFT_SHIFT]) {
             displayMarks = false;
             cleanMarks();
+        }
+
+        if (Input.keys[GLFW_KEY_C]) {
+            if (controlCenter.getCurrentMode().equals(ControlCenter.Mode.DUMP)) {
+                System.out.println("Current step: " + controlCenter.getCurrentStep() + " of " + controlCenter.getMaxDumpStep() +
+                        "; Current second: " + controlCenter.getCurrentSecond());
+            } else {
+                System.out.println("Current step: " + controlCenter.getCurrentStep() +
+                        "; Current second: " + controlCenter.getCurrentSecond());
+            }
         }
 
         if (Input.keys[GLFW_KEY_U]) {
@@ -382,7 +385,7 @@ public class Space implements Runnable {
 
         // If playing then update position and inc second for being displayed
         if (playing) {
-            for (int i = 0; i < speed; i++) {
+            for (int i = 0; i < speedSteps; i++) {
                 if (displayMarks) {
                     if (controlCenter.getCurrentSecond() % marksStepDurationInSeconds == 0) {
                         for (int j = 0; j < planets.size(); j++) {
@@ -393,7 +396,7 @@ public class Space implements Runnable {
 
                 controlCenter.processNextStep();
             }
-//            controlCenter.processNextSteps(speed);
+//            controlCenter.processNextSteps(speedSteps);
 
             Dataset dataset = controlCenter.getDatasetForThisStep();
             for (int i = 0; i < planets.size(); i++) {

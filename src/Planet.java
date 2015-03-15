@@ -26,7 +26,8 @@ public class Planet {
     public static final int MODE_MAIN = 0;
     public static final int MODE_COORDINATES = 1;
 
-    // TODO: Normals
+    public Vector3f pos;
+
     public Planet(int mode, final String name, Vector3f color) {
         this.name = name;
         this.mode = mode;
@@ -52,6 +53,10 @@ public class Planet {
         this.scale(new Vector3f(1.0f, 1.0f, 1.0f));
     }
 
+    public Vector3f getColor() {
+        return color;
+    }
+
     // Scales the actual position to be within the 1.0 box(a little bigger)
     public void update(Vector3d newPosition) {
         if (newPosition != null) { // TODO: why>??
@@ -60,9 +65,15 @@ public class Planet {
             newPositionFloat.y = (float) (newPosition.y / distanceDivider / positionDivider);
             newPositionFloat.z = (float) (newPosition.z / distanceDivider / positionDivider);
             translate(newPositionFloat);
+
+            pos = newPositionFloat; // Not needed anymore
         } else {
 
         }
+    }
+
+    public Vector3f getPos() {
+        return pos;
     }
 
     public String getName() {
@@ -118,10 +129,6 @@ public class Planet {
 
         Shader.main.disable();
     }
-
-//    public static void setPlanetDistanceDivider(float distanceDivider) {
-//        Planet.distanceDivider = distanceDivider;
-//    }
 
     private static float[] generateBoxVertices() {
         float[] vertices = new float[]{

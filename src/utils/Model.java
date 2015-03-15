@@ -31,13 +31,34 @@ public class Model {
     }
 
     public float[] getNormalsArray() {
-        float[] array = new float[faces.size() * 3];
+        float[] array = new float[faces.size() * 3 * 3];
 
         for (int i = 0; i < faces.size(); i++) {
+//            short n = faces.get(faces.size() - i - 1).normal.x;
             short n = faces.get(i).normal.x;
-            array[i * 3] = normals.get(n - 1).x;
-            array[i * 3 + 1] = normals.get(n - 1).y;
-            array[i * 3 + 2] = normals.get(n - 1).z;
+            array[i * 9] = normals.get(n - 1).x;
+            array[i * 9 + 1] = normals.get(n - 1).y;
+            array[i * 9 + 2] = normals.get(n - 1).z;
+
+            array[i * 9 + 3] = normals.get(n - 1).x;
+            array[i * 9 + 4] = normals.get(n - 1).y;
+            array[i * 9 + 5] = normals.get(n - 1).z;
+
+            array[i * 9 + 6] = normals.get(n - 1).x;
+            array[i * 9 + 7] = normals.get(n - 1).y;
+            array[i * 9 + 8] = normals.get(n - 1).z;
+
+//            array[i * 9] = 1.0f;
+//            array[i * 9 + 1] = 0.0f;
+//            array[i * 9 + 2] = 0.0f;
+//
+//            array[i * 9 + 3] = 1.0f;
+//            array[i * 9 + 4] = 0.0f;
+//            array[i * 9 + 5] = 0.0f;
+//
+//            array[i * 9 + 6] = 1.0f;
+//            array[i * 9 + 7] = 0.0f;
+//            array[i * 9 + 8] = 0.0f;
         }
 
         return array;

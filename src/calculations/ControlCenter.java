@@ -155,13 +155,26 @@ public class ControlCenter {
 //        System.out.println();
     }
 
+    public void processNextStep() {
+        if (currentMode.equals(Mode.DUMP)) {
+            if (currentStep + 1 <= currentDump.getMaxSecond()) {
+                currentStep++;
+            }
+        } else if (currentMode.equals(Mode.LIVE_CALCULATING)) {
+            processNextSecond();
+            currentStep++;
+        }
+    }
+
     public void processNextSteps(int n) {
         if (currentMode.equals(Mode.DUMP)) {
-            if (currentStep + n <= currentDump.getMaxSecond())
+            if (currentStep + n <= currentDump.getMaxSecond()) {
                 currentStep += n;
+            }
         } else if (currentMode.equals(Mode.LIVE_CALCULATING)) {
             for (int i = 0; i < n; i++) {
                 processNextSecond();
+                currentStep++;
             }
         }
     }
@@ -379,11 +392,13 @@ public class ControlCenter {
 
         if (currentMode.equals(Mode.DUMP)) {
             for (int i = 0; i < currentDump.getAmountOfPlanets(); i++) {
-                planetsForDataset.add(currentDump.getPlanet(i).getPosition(currentStep));
+                Vector3d pos = currentDump.getPlanet(i).getPosition(currentStep);
+                planetsForDataset.add(pos);
             }
         } else if (currentMode.equals(Mode.LIVE_CALCULATING)) {
             for (int i = 0; i < calculationsPlanets.size(); i++) {
-                planetsForDataset.add(calculationsPlanets.get(i).getPosition());
+                Vector3d pos = calculationsPlanets.get(i).getPosition();
+                planetsForDataset.add(pos);
             }
         }
 

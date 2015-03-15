@@ -31,7 +31,10 @@ public class Space implements Runnable {
     private boolean calculateAndPrintFPS = false;
     private boolean showTerminal = false;
     private boolean playing = false;
-    private int speed = 24*3600;
+    private int speed = 1;
+//    private int speed = 2*3600;
+    private boolean displayMarks = false;
+    private int marksStepDurationInSeconds = 20*24*3600;
 
     private enum Settings {
         REALISTIC, REALISTIC_SMALLER_DISTANCE_BIGGER_RADIUS,
@@ -59,6 +62,7 @@ public class Space implements Runnable {
 
     // Objects for rendering
     private List<Planet> planets = new ArrayList<>();
+    private List<ListMarks> marks = new ArrayList<>();
     //    private Object object;
     private Object ground;
 
@@ -67,7 +71,7 @@ public class Space implements Runnable {
 
         String dumpName = "test";
         controlCenter = new ControlCenter();
-//        controlCenter.createDump("Main_10y", 10*365*24*3600, 1024, 24*3600, controlCenter.initPlanets());
+//        controlCenter.createDump("Big_50y_High", 50*365*24*3600, 60, 24*3600, controlCenter.initPlanets());
 
         /* Tell it:
         - What Dump file to use
@@ -77,11 +81,12 @@ public class Space implements Runnable {
             - Maybe starting parameters(default) for planets
         */
 
-//        controlCenter.useDump("Main_10y");
-//        controlCenter.calculateForObjects(controlCenter.initSunAndEarth(), 1);
-        controlCenter.calculateForObjects(controlCenter.initSunAndEarth(), 24*3600);
+        controlCenter.useDump("Big_50y_High");
+//        controlCenter.calculateForObjects(controlCenter.initPlanets(), 1);
+//        controlCenter.calculateForObjects(controlCenter.initPlanets(), 24*3600);
+        cleanMarks();
 
-        settings = Settings.REALISTIC;
+        settings = Settings.ALL_VISIBLE;
 
         renderingThreadRunning = true;
         renderingThread = new Thread(this, "Space Rendering");
@@ -153,7 +158,7 @@ public class Space implements Runnable {
             break;
             case ALL_VISIBLE: {
                 Planet.distanceDivider = (float) controlCenter.getMaxRemoteness() / maxViewingDistance * 2.0f;
-                Planet.positionDivider = 1.0f;
+                Planet.positionDivider = 0.9f;
             }
             break;
             case REALISTIC_SMALLER_DISTANCE_BIGGER_RADIUS: {
@@ -231,6 +236,13 @@ public class Space implements Runnable {
 //        glFrontFace(GL_CW);
     }
 
+    private void cleanMarks() {
+        marks = new ArrayList<>();
+        for (int i = 0; i < controlCenter.getPlanetsSize(); i++) {
+            marks.add(new ListMarks());
+        }
+    }
+
     @Override
     public void run() {
         init();
@@ -295,6 +307,13 @@ public class Space implements Runnable {
         }
         if (Input.keys[GLFW_KEY_4]) {
             camera.setMovementSpeed4();
+        }
+
+        if (Input.keys[GLFW_KEY_Y] && !Input.keys[GLFW_KEY_LEFT_SHIFT]) {
+            displayMarks = true;
+        } else if (Input.keys[GLFW_KEY_Y] && Input.keys[GLFW_KEY_LEFT_SHIFT]) {
+            displayMarks = false;
+            cleanMarks();
         }
 
         if (Input.keys[GLFW_KEY_U]) {
@@ -363,7 +382,18 @@ public class Space implements Runnable {
 
         // If playing then update position and inc second for being displayed
         if (playing) {
-            controlCenter.processNextSteps(speed);
+            for (int i = 0; i < speed; i++) {
+                if (displayMarks) {
+                    if (controlCenter.getCurrentSecond() % marksStepDurationInSeconds == 0) {
+                        for (int j = 0; j < planets.size(); j++) {
+                            marks.get(j).marks.add(new Mark(planets.get(j).getPos(), planets.get(j).getColor()));
+                        }
+                    }
+                }
+
+                controlCenter.processNextStep();
+            }
+//            controlCenter.processNextSteps(speed);
 
             Dataset dataset = controlCenter.getDatasetForThisStep();
             for (int i = 0; i < planets.size(); i++) {
@@ -384,6 +414,14 @@ public class Space implements Runnable {
         }
 //        object.render();
         ground.render();
+
+        if (displayMarks) {
+            for (ListMarks listMarks : marks) {
+                for (Mark mark : listMarks.marks) {
+                    mark.render();
+                }
+            }
+        }
 
         glfwSwapBuffers(window);
     }

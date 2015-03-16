@@ -70,32 +70,40 @@ public class ControlCenter {
     // -=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+
     // -=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+
 
-    public void createDump(String name, int seconds, int accuracy, int stepDuration, List<CalculationsPlanet> calculationsPlanets) {
-        long startTime = System.currentTimeMillis();
+    public String getFullTime(int seconds) {
+        String result = "";
 
         int y = div(seconds, 365 * 24 * 3600);
         int d = div(seconds - y * (365 * 24 * 3600), 24 * 3600);
         int h = div(seconds - y * (365 * 24 * 3600) - d * (24 * 3600), 3600);
         int s = (seconds - y * (365 * 24 * 3600) - d * (24 * 3600) - h * (3600));
 
+        if (y > 0) {
+            result += y + "years ";
+        }
+        if (d > 0) {
+            result += d + "days ";
+        }
+        if (h > 0) {
+            result += h + "hours ";
+        }
+        if (s > 0) {
+            result += s + "seconds ";
+        }
+
+        return result;
+    }
+
+    public void createDump(String name, int seconds, int accuracy, int stepDuration, List<CalculationsPlanet> calculationsPlanets) {
+        long startTime = System.currentTimeMillis();
+
+
+
         Dump dump = new Dump(name, stepDuration);
         System.out.println("### Creating Dump ###");
         System.out.println("Name: " + name);
 
-        System.out.print("Time: ");
-        if (y > 0) {
-            System.out.print(y + "years ");
-        }
-        if (d > 0) {
-            System.out.print(d + "days ");
-        }
-        if (h > 0) {
-            System.out.print(h + "hours ");
-        }
-        if (s > 0) {
-            System.out.print(s + "seconds");
-        }
-        System.out.println();
+        System.out.println("Time: " + getFullTime(seconds));
 
         System.out.println("Accuracy: " + accuracy);
         System.out.println("Step duration: " + stepDuration + " seconds");

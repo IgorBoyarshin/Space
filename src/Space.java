@@ -27,22 +27,14 @@ public class Space implements Runnable {
     private final int HEIGHT = 600;
 
     // Settings
-    private final float maxViewingDistance = (float) Math.pow(10, 3) * 1.0f;
-    private boolean calculateAndPrintFPS = false;
-    private boolean showTerminal = false;
-    private boolean playing = false;
-    private final int speedDump = 1;
-    private final int speedLive = 2*3600;
-    private int speedSteps = speedDump;
-    private boolean displayMarks = false;
-    private int marksStepDurationInSeconds = 30 * 24 * 3600;
+    private Settings settings = new Settings();
 
-    private enum Settings {
+    private enum DistanceSystem {
         REALISTIC, REALISTIC_SMALLER_DISTANCE_BIGGER_RADIUS,
         OBJECTS, ALL_VISIBLE
     }
 
-    private Settings settings;
+    private DistanceSystem distanceSystem;
 
     private Camera camera;
     private Thread renderingThread;
@@ -71,16 +63,17 @@ public class Space implements Runnable {
     public void start() {
         System.out.println(":> Starting the program");
 
-        String dumpName = "test";
         controlCenter = new ControlCenter();
 //        controlCenter.createDump("Big_50y_High", 50*365*24*3600, 60, 24*3600, controlCenter.initPlanets());
 
         controlCenter.useDump("Main_10y");
 //        controlCenter.calculateForObjects(controlCenter.initPlanets(), 1);
 //        controlCenter.calculateForObjects(controlCenter.initPlanets(), 24*3600);
+        settings.setCurrentSpeedType(1);
+
         cleanMarks();
 
-        settings = Settings.ALL_VISIBLE;
+        distanceSystem = DistanceSystem.ALL_VISIBLE;
 
         renderingThreadRunning = true;
         renderingThread = new Thread(this, "Space Rendering");
@@ -137,16 +130,16 @@ public class Space implements Runnable {
         camera.setMovementSpeed2();
 
         ground = new Object(Object.MODE_MAIN, new Vector3f(0.3f, 0.1f, 0.8f));
-        ground.scale(new Vector3f(maxViewingDistance / 2, maxViewingDistance / 2, maxViewingDistance / 2));
+        ground.scale(new Vector3f(settings.maxViewingDistance / 2, settings.maxViewingDistance / 2, settings.maxViewingDistance / 2));
 
-        switch (settings) {
+        switch (distanceSystem) {
             case OBJECTS: {
                 Planet.distanceDivider = 1000.0f;
                 Planet.positionDivider = 1.0f;
             }
             break;
             case ALL_VISIBLE: {
-                Planet.distanceDivider = (float) controlCenter.getMaxRemoteness() / maxViewingDistance * 2.0f;
+                Planet.distanceDivider = (float) controlCenter.getMaxRemoteness() / settings.maxViewingDistance * 2.0f;
                 Planet.positionDivider = 0.9f;
             }
             break;
@@ -174,7 +167,7 @@ public class Space implements Runnable {
                     new Vector3f(1.0f - i * 1.0f / controlCenter.getPlanetsSize(), 0.25f, i * 1.0f / controlCenter.getPlanetsSize())));
             planets.get(i).update(dataset.getPlanet(i));
 
-            switch (settings) {
+            switch (distanceSystem) {
                 case OBJECTS: {
                     planets.get(i).scale(new Vector3f(radius, radius, radius));
                 }
@@ -203,7 +196,7 @@ public class Space implements Runnable {
 
         Shader.main.enable();
         Shader.main.setUniformMat4f("camera", camera.getMatrix());
-        Matrix4f perspective = Matrix4f.perspective(WIDTH, HEIGHT, 67.0f, 0.2f, maxViewingDistance);
+        Matrix4f perspective = Matrix4f.perspective(WIDTH, HEIGHT, 67.0f, 0.2f, settings.maxViewingDistance);
         Shader.main.setUniformMat4f("perspectiveMatrix", perspective);
         Shader.main.disable();
     }
@@ -242,7 +235,7 @@ public class Space implements Runnable {
             update();
             render();
 
-            if (calculateAndPrintFPS) {
+            if (settings.calculateAndPrintFPS) {
                 fps++;
                 long curTime = System.currentTimeMillis();
                 if (curTime - lastTime > 1000) {
@@ -299,58 +292,12 @@ public class Space implements Runnable {
             camera.setMovementSpeed4();
         }
 
-        if (Input.keys[GLFW_KEY_B]) {
-            long time = System.currentTimeMillis();
-            if (time - inputKeyLast > inputKeyDelay) {
-                moveFromDumpToLive();
-                speedSteps = speedLive;
-
-                inputKeyLast = time;
-            }
-        }
-
-        if (Input.keys[GLFW_KEY_Y] && !Input.keys[GLFW_KEY_LEFT_SHIFT]) {
-            displayMarks = true;
-        } else if (Input.keys[GLFW_KEY_Y] && Input.keys[GLFW_KEY_LEFT_SHIFT]) {
-            long time = System.currentTimeMillis();
-            if (time - inputKeyLast > inputKeyDelay) {
-                displayMarks = false;
-                cleanMarks();
-
-                inputKeyLast = time;
-            }
-        }
-
-        if (Input.keys[GLFW_KEY_C]) {
-            long time = System.currentTimeMillis();
-            if (time - inputKeyLast > inputKeyDelay) {
-                if (controlCenter.getCurrentMode().equals(ControlCenter.Mode.DUMP)) {
-                    System.out.println("Current step: " + controlCenter.getCurrentStep() + " of " + controlCenter.getMaxDumpStep() +
-                            "; Current second: " + controlCenter.getCurrentSecond());
-                } else {
-                    System.out.println("Current step: " + controlCenter.getCurrentStep() +
-                            "; Current second: " + controlCenter.getCurrentSecond());
-                }
-
-                inputKeyLast = time;
-            }
-        }
-
-        if (Input.keys[GLFW_KEY_U]) {
-            long time = System.currentTimeMillis();
-            if (time - inputKeyLast > inputKeyDelay) {
-                Vector3f position = camera.getPosition();
-                System.out.println("Position (" + position.x + " ; " + position.y + " ; " + position.z + ")");
-
-                inputKeyLast = time;
-            }
-        }
-
         if (Input.keys[GLFW_KEY_P] && !Input.keys[GLFW_KEY_LEFT_SHIFT]) {
-            playing = true;
+            settings.playing = true;
         }
+
         if (Input.keys[GLFW_KEY_P] && Input.keys[GLFW_KEY_LEFT_SHIFT]) {
-            playing = false;
+            settings.playing = false;
         }
 
 //        if (Input.keys[GLFW_KEY_T] && !Input.keys[GLFW_KEY_LEFT_SHIFT]) {
@@ -361,10 +308,11 @@ public class Space implements Runnable {
 //        }
 
         if (Input.keys[GLFW_KEY_F] && !Input.keys[GLFW_KEY_LEFT_SHIFT]) {
-            calculateAndPrintFPS = true;
+            settings.calculateAndPrintFPS = true;
         }
+
         if (Input.keys[GLFW_KEY_F] && Input.keys[GLFW_KEY_LEFT_SHIFT]) {
-            calculateAndPrintFPS = false;
+            settings.calculateAndPrintFPS = false;
         }
 
         if (Input.keys[GLFW_KEY_Z]) {
@@ -385,10 +333,67 @@ public class Space implements Runnable {
         if (Input.keys[GLFW_KEY_S]) {
             camera.moveBackwards();
         }
+
+        if (Input.keys[GLFW_KEY_BACKSPACE]) {
+            System.out.println(controlCenter.getFullTime(settings.getCurrentSpeed() * controlCenter.getStepDuration()));
+        }
+
+        // One-click buttons
+
+        long time = System.currentTimeMillis();
+        if (time - inputKeyLast > inputKeyDelay) {
+            if (Input.keys[GLFW_KEY_EQUAL]) { // plus
+                settings.intCurrentSpeed();
+
+                inputKeyLast = time;
+            }
+            if (Input.keys[GLFW_KEY_MINUS]) { // plus
+                settings.decCurrentSpeed();
+
+                inputKeyLast = time;
+            }
+
+            if (Input.keys[GLFW_KEY_B]) {
+                moveFromDumpToLive();
+                settings.setCurrentSpeedType(0);
+
+                inputKeyLast = time;
+            }
+
+            if (Input.keys[GLFW_KEY_Y] && !Input.keys[GLFW_KEY_LEFT_SHIFT]) {
+                settings.displayMarks = true;
+
+                inputKeyLast = time;
+            } else if (Input.keys[GLFW_KEY_Y] && Input.keys[GLFW_KEY_LEFT_SHIFT]) {
+                settings.displayMarks = false;
+                cleanMarks();
+
+                inputKeyLast = time;
+            }
+
+            if (Input.keys[GLFW_KEY_C]) {
+                if (controlCenter.getCurrentMode().equals(ControlCenter.Mode.DUMP)) {
+                    System.out.println("Current step: " + controlCenter.getCurrentStep() + " of " + controlCenter.getMaxDumpStep() +
+                            "; Current second: " + controlCenter.getCurrentSecond());
+                    inputKeyLast = time;
+                } else {
+                    System.out.println("Current step: " + controlCenter.getCurrentStep() +
+                            "; Current second: " + controlCenter.getCurrentSecond());
+                    inputKeyLast = time;
+                }
+            }
+
+            if (Input.keys[GLFW_KEY_U]) {
+                Vector3f position = camera.getPosition();
+                System.out.println("Position (" + position.x + " ; " + position.y + " ; " + position.z + ")");
+
+                inputKeyLast = time;
+            }
+        }
     }
 
     private void processTerminal() {
-        calculateAndPrintFPS = false;
+        settings.calculateAndPrintFPS = false;
 
         System.out.print(":>>");
 
@@ -401,15 +406,15 @@ public class Space implements Runnable {
 
         keyboard();
 
-        if (showTerminal) {
+        if (settings.showTerminal) {
             processTerminal();
         }
 
         // If playing then update position and inc second for being displayed
-        if (playing) {
-            for (int i = 0; i < speedSteps; i++) {
-                if (displayMarks) {
-                    if (controlCenter.getCurrentSecond() % marksStepDurationInSeconds == 0) {
+        if (settings.playing) {
+            for (int i = 0; i < settings.currentSpeedSteps; i++) {
+                if (settings.displayMarks) {
+                    if (controlCenter.getCurrentSecond() % settings.marksStepDurationInSeconds == 0) {
                         for (int j = 0; j < planets.size(); j++) {
                             marks.get(j).marks.add(new Mark(planets.get(j).getPos(), planets.get(j).getColor()));
                         }
@@ -440,7 +445,7 @@ public class Space implements Runnable {
 //        object.render();
         ground.render();
 
-        if (displayMarks) {
+        if (settings.displayMarks) {
             for (ListMarks listMarks : marks) {
                 for (Mark mark : listMarks.marks) {
                     mark.render();

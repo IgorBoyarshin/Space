@@ -53,6 +53,8 @@ public class Space implements Runnable {
     private long window;
     private Input input = new Input();
     private InputMouse inputMouse = new InputMouse();
+    private final long inputKeyDelay = 250;
+    private long inputKeyLast = System.currentTimeMillis();
 
     // FPS
     private long lastTime = System.currentTimeMillis();
@@ -298,30 +300,50 @@ public class Space implements Runnable {
         }
 
         if (Input.keys[GLFW_KEY_B]) {
-            moveFromDumpToLive();
-            speedSteps = speedLive;
+            long time = System.currentTimeMillis();
+            if (time - inputKeyLast > inputKeyDelay) {
+                moveFromDumpToLive();
+                speedSteps = speedLive;
+
+                inputKeyLast = time;
+            }
         }
 
         if (Input.keys[GLFW_KEY_Y] && !Input.keys[GLFW_KEY_LEFT_SHIFT]) {
             displayMarks = true;
         } else if (Input.keys[GLFW_KEY_Y] && Input.keys[GLFW_KEY_LEFT_SHIFT]) {
-            displayMarks = false;
-            cleanMarks();
+            long time = System.currentTimeMillis();
+            if (time - inputKeyLast > inputKeyDelay) {
+                displayMarks = false;
+                cleanMarks();
+
+                inputKeyLast = time;
+            }
         }
 
         if (Input.keys[GLFW_KEY_C]) {
-            if (controlCenter.getCurrentMode().equals(ControlCenter.Mode.DUMP)) {
-                System.out.println("Current step: " + controlCenter.getCurrentStep() + " of " + controlCenter.getMaxDumpStep() +
-                        "; Current second: " + controlCenter.getCurrentSecond());
-            } else {
-                System.out.println("Current step: " + controlCenter.getCurrentStep() +
-                        "; Current second: " + controlCenter.getCurrentSecond());
+            long time = System.currentTimeMillis();
+            if (time - inputKeyLast > inputKeyDelay) {
+                if (controlCenter.getCurrentMode().equals(ControlCenter.Mode.DUMP)) {
+                    System.out.println("Current step: " + controlCenter.getCurrentStep() + " of " + controlCenter.getMaxDumpStep() +
+                            "; Current second: " + controlCenter.getCurrentSecond());
+                } else {
+                    System.out.println("Current step: " + controlCenter.getCurrentStep() +
+                            "; Current second: " + controlCenter.getCurrentSecond());
+                }
+
+                inputKeyLast = time;
             }
         }
 
         if (Input.keys[GLFW_KEY_U]) {
-            Vector3f position = camera.getPosition();
-            System.out.println("Position (" + position.x + " ; " + position.y + " ; " + position.z + ")");
+            long time = System.currentTimeMillis();
+            if (time - inputKeyLast > inputKeyDelay) {
+                Vector3f position = camera.getPosition();
+                System.out.println("Position (" + position.x + " ; " + position.y + " ; " + position.z + ")");
+
+                inputKeyLast = time;
+            }
         }
 
         if (Input.keys[GLFW_KEY_P] && !Input.keys[GLFW_KEY_LEFT_SHIFT]) {

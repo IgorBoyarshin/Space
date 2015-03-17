@@ -30,6 +30,7 @@ public class Settings {
     private int currentSpeed = 0;
     private int currentLiveSpeed = 2;
     private int currentDumpSpeed = 0;
+    public boolean dumpForward = true;
 
     public int getCurrentSpeed() {
 //        return currentLiveSpeed;

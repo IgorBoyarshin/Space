@@ -203,8 +203,11 @@ public class Space implements Runnable {
 
     private void prepareRenderingSettings() {
         glViewport(0, 0, WIDTH, HEIGHT);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+//        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glEnable(GL_DEPTH_TEST);
+
+        glEnable(GL_LIGHTING);
+        glEnable(GL_LIGHT0);
 
 //        glEnable(GL_BLEND);
 //        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -353,6 +356,12 @@ public class Space implements Runnable {
                 inputKeyLast = time;
             }
 
+            if (Input.keys[GLFW_KEY_N]) {
+                settings.dumpForward = !settings.dumpForward;
+
+                inputKeyLast = time;
+            }
+
             if (Input.keys[GLFW_KEY_B]) {
                 moveFromDumpToLive();
                 settings.setCurrentSpeedType(0);
@@ -421,7 +430,7 @@ public class Space implements Runnable {
                     }
                 }
 
-                controlCenter.processNextStep();
+                controlCenter.processNextStep(settings.dumpForward);
             }
 //            controlCenter.processNextSteps(speedSteps);
 

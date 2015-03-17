@@ -163,10 +163,16 @@ public class ControlCenter {
 //        System.out.println();
     }
 
-    public void processNextStep() {
+    public void processNextStep(boolean forwards) {
         if (currentMode.equals(Mode.DUMP)) {
-            if (currentStep + 1 <= currentDump.getMaxSecond()) {
-                currentStep++;
+            if (forwards) {
+                if (currentStep + 1 <= currentDump.getMaxSecond()) {
+                    currentStep++;
+                }
+            } else {
+                if (currentStep - 1 >= 0) {
+                    currentStep--;
+                }
             }
         } else if (currentMode.equals(Mode.LIVE_CALCULATING)) {
             processNextSecond();

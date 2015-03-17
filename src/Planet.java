@@ -119,6 +119,7 @@ public class Planet {
         Shader.main.enable();
 
         Shader.main.setUniform3f("color", color);
+        Shader.main.setUniform1f("applyLighting", 1.0f);
         if (mode == MODE_MAIN) {
             Shader.main.setUniformMat4f("objectMatrix", theObject);
         } else if (mode == MODE_COORDINATES) {

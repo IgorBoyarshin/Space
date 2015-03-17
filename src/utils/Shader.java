@@ -42,6 +42,10 @@ public class Shader {
         return result;
     }
 
+    public void setUniform1f(String name, float f) {
+        glUniform1f(getUniform(name), f);
+    }
+
     public void setUniform3f(String name, Vector3f vector) {
         glUniform3f(getUniform(name), vector.x, vector.y, vector.z);
     }

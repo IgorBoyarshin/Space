@@ -112,6 +112,7 @@ public class Object {
 
         Shader.main.enable();
 
+        Shader.main.setUniform1f("applyLighting", 0.0f);
         Shader.main.setUniform3f("color", color);
 
         if (mode == MODE_MAIN) {

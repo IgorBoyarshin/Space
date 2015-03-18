@@ -63,6 +63,10 @@ public class Camera {
         position.x -= movementSpeed * (float) Math.cos(PI / 2.0f - yaw);
         position.y -= movementSpeed * (float) Math.cos(PI / 2.0f - pitch);
         position.z += movementSpeed * (float) (Math.cos(pitch) * Math.cos(yaw));
+
+//        position.x += movementSpeed * (float) Math.cos(yaw);
+//        position.y += movementSpeed * (float) Math.sin(pitch);
+//        position.z += movementSpeed * (float) (Math.cos(pitch) * Math.cos(yaw));
     }
 
     public void moveBackwards() {
@@ -140,7 +144,16 @@ public class Camera {
     }
 
     public Vector3f getPosition() {
-        return position;
+        return new Vector3f(-position.x, -position.y, position.z);
+    }
+
+    public Matrix4f getMatrixNoPos() {
+        Matrix4f matrix = Matrix4f.identity();
+        Matrix4f rot1 = Matrix4f.rotate(toDegrees(pitch), 1.0f, 0.0f, 0.0f);
+        Matrix4f rot2 = Matrix4f.rotate(toDegrees(yaw), 0.0f, 1.0f, 0.0f);
+        matrix = rot1.multiply(rot2);
+
+        return matrix;
     }
 
     public Matrix4f getMatrix() {

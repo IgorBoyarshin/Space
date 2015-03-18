@@ -9,6 +9,7 @@ public class Settings {
     public boolean showTerminal = false;
     public boolean playing = false;
     public boolean displayMarks = false;
+    public boolean displayStars = true;
 
     public int currentSpeedSteps = 1;
     private final int[] speedLive = new int[]{
@@ -17,7 +18,13 @@ public class Settings {
             4 * 3600,
             8 * 3600,
             16 * 3600,
+            24 * 3600,
             32 * 3600,
+            40 * 3600,
+            48 * 3600,
+            56 * 3600,
+            64 * 3600,
+            72 * 3600
     };
     private final int[] speedDump = new int[]{
             1,

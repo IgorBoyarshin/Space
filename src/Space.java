@@ -58,18 +58,21 @@ public class Space implements Runnable {
     // Objects for rendering
     private List<Planet> planets = new ArrayList<>();
     private List<ListMarks> marks = new ArrayList<>();
+    private ListMarks listMarks;
     private Object ground;
+    private Stars stars;
 
     public void start() {
         System.out.println(":> Starting the program");
 
         controlCenter = new ControlCenter();
-//        controlCenter.createDump("Big_50y_High", 50*365*24*3600, 60, 24*3600, controlCenter.initPlanets());
+//        controlCenter.createDump("Objects_1", 50*365*24*3600, 60, 24*3600, controlCenter.initRandomObjects(25));
 
-        controlCenter.useDump("Main_10y");
+        controlCenter.useDump("Main_50y");
 //        controlCenter.calculateForObjects(controlCenter.initPlanets(), 1);
 //        controlCenter.calculateForObjects(controlCenter.initPlanets(), 24*3600);
         settings.setCurrentSpeedType(1);
+        listMarks = new ListMarks(controlCenter.getPlanetsSize());
 
         cleanMarks();
 
@@ -129,12 +132,14 @@ public class Space implements Runnable {
         camera = new Camera(new Vector3f(0.0f, 10.0f, -25.0f), 0.0f, 0.0f);
         camera.setMovementSpeed2();
 
-        ground = new Object(Object.MODE_MAIN, new Vector3f(0.3f, 0.1f, 0.8f));
+        ground = new Object(Object.MODE_MAIN, new Vector3f(0.0f, 0.0f, 0.0f));
         ground.scale(new Vector3f(settings.maxViewingDistance / 2, settings.maxViewingDistance / 2, settings.maxViewingDistance / 2));
+
+        stars = new Stars(500, settings.maxViewingDistance / 2.0f);
 
         switch (distanceSystem) {
             case OBJECTS: {
-                Planet.distanceDivider = 1000.0f;
+                Planet.distanceDivider = 5;
                 Planet.positionDivider = 1.0f;
             }
             break;
@@ -164,7 +169,7 @@ public class Space implements Runnable {
         for (int i = 0; i < controlCenter.getPlanetsSize(); i++) {
             float radius = (float) controlCenter.getPlanetRadius(i);
             planets.add(new Planet(Object.MODE_COORDINATES, controlCenter.getPlanetName(i),
-                    new Vector3f(1.0f - i * 1.0f / controlCenter.getPlanetsSize(), 0.25f, i * 1.0f / controlCenter.getPlanetsSize())));
+                    new Vector3f(1.0f - i * 1.0f / controlCenter.getPlanetsSize(), 0.05f, i * 1.0f / controlCenter.getPlanetsSize())));
             planets.get(i).update(dataset.getPlanet(i));
 
             switch (distanceSystem) {
@@ -199,11 +204,15 @@ public class Space implements Runnable {
         Matrix4f perspective = Matrix4f.perspective(WIDTH, HEIGHT, 67.0f, 0.2f, settings.maxViewingDistance);
         Shader.main.setUniformMat4f("perspectiveMatrix", perspective);
         Shader.main.disable();
+
+        Shader.stars.enable();
+        Shader.stars.setUniformMat4f("perspectiveMatrix", perspective);
+        Shader.stars.disable();
     }
 
     private void prepareRenderingSettings() {
         glViewport(0, 0, WIDTH, HEIGHT);
-//        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glEnable(GL_DEPTH_TEST);
 
         glEnable(GL_LIGHTING);
@@ -217,10 +226,7 @@ public class Space implements Runnable {
     }
 
     private void cleanMarks() {
-        marks = new ArrayList<>();
-        for (int i = 0; i < controlCenter.getPlanetsSize(); i++) {
-            marks.add(new ListMarks());
-        }
+        listMarks.clear();
     }
 
     private void moveFromDumpToLive() {
@@ -267,6 +273,66 @@ public class Space implements Runnable {
         errorCallback.release();
     }
 
+    private void update() {
+        glfwPollEvents();
+
+        keyboard();
+
+        if (settings.showTerminal) {
+            processTerminal();
+        }
+
+        // If playing then update position and inc the second for being displayed
+        if (settings.playing) {
+            for (int i = 0; i < settings.currentSpeedSteps; i++) {
+                if (settings.displayMarks) {
+                    if (controlCenter.getCurrentSecond() % settings.marksStepDurationInSeconds == 0) {
+                        for (int j = 0; j < planets.size(); j++) {
+                            listMarks.add(j, planets.get(j).getPos(), planets.get(j).getColor());
+                        }
+                    }
+                }
+
+                controlCenter.processNextStep(settings.dumpForward);
+            }
+//            controlCenter.processNextSteps(speedSteps);
+
+            Dataset dataset = controlCenter.getDatasetForThisStep();
+            for (int i = 0; i < planets.size(); i++) {
+                planets.get(i).update(dataset.getPlanet(i));
+            }
+        }
+
+        Shader.main.enable();
+        Shader.main.setUniformMat4f("camera", camera.getMatrix());
+        Shader.main.disable();
+    }
+
+    private void render() {
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        for (Planet planet : planets) {
+            planet.render();
+        }
+//        object.render();
+        ground.render();
+        if (settings.displayStars) {
+            stars.render(camera.getMatrixNoPos());
+        }
+
+        if (settings.displayMarks) {
+            listMarks.render();
+//            for (ListMarks listMarks : marks) {
+////                for (Mark mark : listMarks.marks) {
+////                    mark.render();
+////                }
+//                listMarks.render();
+//            }
+        }
+
+        glfwSwapBuffers(window);
+    }
+
     private void keyboard() {
         if (Input.keys[GLFW_KEY_ESCAPE]) {
             System.out.println(":> Terminating the program");
@@ -281,26 +347,14 @@ public class Space implements Runnable {
 
         if (Input.keys[GLFW_KEY_0]) {
             camera.setMovementSpeed0();
-        }
-        if (Input.keys[GLFW_KEY_1]) {
+        } else if (Input.keys[GLFW_KEY_1]) {
             camera.setMovementSpeed1();
-        }
-        if (Input.keys[GLFW_KEY_2]) {
+        } else if (Input.keys[GLFW_KEY_2]) {
             camera.setMovementSpeed2();
-        }
-        if (Input.keys[GLFW_KEY_3]) {
+        } else if (Input.keys[GLFW_KEY_3]) {
             camera.setMovementSpeed3();
-        }
-        if (Input.keys[GLFW_KEY_4]) {
+        } else if (Input.keys[GLFW_KEY_4]) {
             camera.setMovementSpeed4();
-        }
-
-        if (Input.keys[GLFW_KEY_P] && !Input.keys[GLFW_KEY_LEFT_SHIFT]) {
-            settings.playing = true;
-        }
-
-        if (Input.keys[GLFW_KEY_P] && Input.keys[GLFW_KEY_LEFT_SHIFT]) {
-            settings.playing = false;
         }
 
 //        if (Input.keys[GLFW_KEY_T] && !Input.keys[GLFW_KEY_LEFT_SHIFT]) {
@@ -309,14 +363,6 @@ public class Space implements Runnable {
 //        if (Input.keys[GLFW_KEY_T] && Input.keys[GLFW_KEY_LEFT_SHIFT]) {
 //            showTerminal = false;
 //        }
-
-        if (Input.keys[GLFW_KEY_F] && !Input.keys[GLFW_KEY_LEFT_SHIFT]) {
-            settings.calculateAndPrintFPS = true;
-        }
-
-        if (Input.keys[GLFW_KEY_F] && Input.keys[GLFW_KEY_LEFT_SHIFT]) {
-            settings.calculateAndPrintFPS = false;
-        }
 
         if (Input.keys[GLFW_KEY_Z]) {
             camera.moveUp();
@@ -345,19 +391,45 @@ public class Space implements Runnable {
 
         long time = System.currentTimeMillis();
         if (time - inputKeyLast > inputKeyDelay) {
-            if (Input.keys[GLFW_KEY_EQUAL]) { // plus
-                settings.intCurrentSpeed();
+
+//            if (Input.keys[GLFW_KEY_L]) {
+////                System.out.println(marks.get(0).marks.size() * 9);
+//
+//                inputKeyLast = time;
+//            }
+
+            if (Input.keys[GLFW_KEY_P]) {
+                settings.playing = !settings.playing;
+                System.out.println(":> Playing: " + (settings.playing ? "On" : "Off"));
 
                 inputKeyLast = time;
             }
-            if (Input.keys[GLFW_KEY_MINUS]) { // plus
+
+            if (Input.keys[GLFW_KEY_F]) {
+                settings.calculateAndPrintFPS = !settings.calculateAndPrintFPS;
+                System.out.println(":> Print FPS: " + (settings.calculateAndPrintFPS ? "On" : "Off"));
+
+                inputKeyLast = time;
+            }
+
+            if (Input.keys[GLFW_KEY_EQUAL]) { // plus
+                settings.intCurrentSpeed();
+                System.out.println(":> Current speed: " +
+                        controlCenter.getFullTime(settings.getCurrentSpeed() * controlCenter.getStepDuration()));
+
+                inputKeyLast = time;
+            }
+            if (Input.keys[GLFW_KEY_MINUS]) { // minus
                 settings.decCurrentSpeed();
+                System.out.println(":> Current speed: " +
+                        controlCenter.getFullTime(settings.getCurrentSpeed() * controlCenter.getStepDuration()));
 
                 inputKeyLast = time;
             }
 
             if (Input.keys[GLFW_KEY_N]) {
                 settings.dumpForward = !settings.dumpForward;
+                System.out.println(":> Moving forward in time: " + (settings.dumpForward ? "On" : "Off"));
 
                 inputKeyLast = time;
             }
@@ -369,24 +441,23 @@ public class Space implements Runnable {
                 inputKeyLast = time;
             }
 
-            if (Input.keys[GLFW_KEY_Y] && !Input.keys[GLFW_KEY_LEFT_SHIFT]) {
-                settings.displayMarks = true;
-
-                inputKeyLast = time;
-            } else if (Input.keys[GLFW_KEY_Y] && Input.keys[GLFW_KEY_LEFT_SHIFT]) {
-                settings.displayMarks = false;
-                cleanMarks();
+            if (Input.keys[GLFW_KEY_Y]) {
+                if (settings.displayMarks) {
+                    cleanMarks();
+                }
+                settings.displayMarks = !settings.displayMarks;
+                System.out.println(":> Displaying marks: " + (settings.displayMarks ? "On" : "Off"));
 
                 inputKeyLast = time;
             }
 
             if (Input.keys[GLFW_KEY_C]) {
                 if (controlCenter.getCurrentMode().equals(ControlCenter.Mode.DUMP)) {
-                    System.out.println("Current step: " + controlCenter.getCurrentStep() + " of " + controlCenter.getMaxDumpStep() +
+                    System.out.println(":> Current step: " + controlCenter.getCurrentStep() + " of " + controlCenter.getMaxDumpStep() +
                             "; Current second: " + controlCenter.getCurrentSecond());
                     inputKeyLast = time;
                 } else {
-                    System.out.println("Current step: " + controlCenter.getCurrentStep() +
+                    System.out.println(":> Current step: " + controlCenter.getCurrentStep() +
                             "; Current second: " + controlCenter.getCurrentSecond());
                     inputKeyLast = time;
                 }
@@ -394,7 +465,14 @@ public class Space implements Runnable {
 
             if (Input.keys[GLFW_KEY_U]) {
                 Vector3f position = camera.getPosition();
-                System.out.println("Position (" + position.x + " ; " + position.y + " ; " + position.z + ")");
+                System.out.println(":> Position (" + position.x + " ; " + position.y + " ; " + position.z + ")");
+
+                inputKeyLast = time;
+            }
+
+            if (Input.keys[GLFW_KEY_K]) {
+                settings.displayStars = !settings.displayStars;
+                System.out.println(":> Displaying stars: " + (settings.displayStars ? "On" : "Off"));
 
                 inputKeyLast = time;
             }
@@ -408,61 +486,6 @@ public class Space implements Runnable {
 
         // Terminal
         // Wait for input
-    }
-
-    private void update() {
-        glfwPollEvents();
-
-        keyboard();
-
-        if (settings.showTerminal) {
-            processTerminal();
-        }
-
-        // If playing then update position and inc second for being displayed
-        if (settings.playing) {
-            for (int i = 0; i < settings.currentSpeedSteps; i++) {
-                if (settings.displayMarks) {
-                    if (controlCenter.getCurrentSecond() % settings.marksStepDurationInSeconds == 0) {
-                        for (int j = 0; j < planets.size(); j++) {
-                            marks.get(j).marks.add(new Mark(planets.get(j).getPos(), planets.get(j).getColor()));
-                        }
-                    }
-                }
-
-                controlCenter.processNextStep(settings.dumpForward);
-            }
-//            controlCenter.processNextSteps(speedSteps);
-
-            Dataset dataset = controlCenter.getDatasetForThisStep();
-            for (int i = 0; i < planets.size(); i++) {
-                planets.get(i).update(dataset.getPlanet(i));
-            }
-        }
-
-        Shader.main.enable();
-        Shader.main.setUniformMat4f("camera", camera.getMatrix());
-        Shader.main.disable();
-    }
-
-    private void render() {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        for (Planet planet : planets) {
-            planet.render();
-        }
-//        object.render();
-        ground.render();
-
-        if (settings.displayMarks) {
-            for (ListMarks listMarks : marks) {
-                for (Mark mark : listMarks.marks) {
-                    mark.render();
-                }
-            }
-        }
-
-        glfwSwapBuffers(window);
     }
 
     public static void main(String[] args) {

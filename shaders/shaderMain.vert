@@ -22,13 +22,15 @@ void main()
     //vec4 l = vec4(vec3(300.0, 0.0, 0.0), 0.0);
     //float cosNormal = clamp( (dot((normal), normalize(-l))), 0.0, 1.0);
 
-    if (applyLighting == 1.0) {
+    if (applyLighting == -1.0) {
         vec4 l = vec4(vec3(obj.x, obj.y, obj.z), 0.0);
         float cosNormal = clamp( (dot(normal, normalize(-l))), 0.0, 1.0);
         theColor = vec4(color * cosNormal, 1.0);
     } else {
-        theColor = vec4(color * 0.5f, 1.0);
+        theColor = vec4(color * applyLighting, 1.0);
     }
+
+    //theColor = vec4(color, 1.0);
 
     //theColor = vec4(color, 1.0);
     //theColor = vec4(color * cosNormal, 1.0);

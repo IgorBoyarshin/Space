@@ -11,6 +11,7 @@ import static org.lwjgl.opengl.GL20.*;
 public class Shader {
 
     public static Shader main;
+    public static Shader stars;
 
     public static final int ATTR_VERTEX = 0;
     public static final int ATTR_NORMAL = 1;
@@ -21,6 +22,7 @@ public class Shader {
 
     public static void loadAll() {
         main = new Shader("shaders//shaderMain.vert", "shaders//shaderMain.frag");
+        stars = new Shader("shaders//stars.vert", "shaders//stars.frag");
     }
 
     public Shader(String vertex, String fragment) {

@@ -45,7 +45,7 @@ public class ControlCenter {
         this.applyForceDuration = applyForceDuration;
 
         System.out.println(":> Will process further for objects");
-        System.out.println();
+//        System.out.println();
     }
 
     public void useDump(String name) {
@@ -69,6 +69,34 @@ public class ControlCenter {
     // -=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+
     // -=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+
     // -=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+-=+
+
+    public String getFullTimeComplete(int seconds) {
+        String result = "";
+
+        int y = div(seconds, 365 * 24 * 3600);
+        int d = div(seconds - y * (365 * 24 * 3600), 24 * 3600);
+        int h = div(seconds - y * (365 * 24 * 3600) - d * (24 * 3600), 3600);
+        int m = div(seconds - y * (365 * 24 * 3600) - d * (24 * 3600) - h * (3600), 60);
+        int s = (seconds - y * (365 * 24 * 3600) - d * (24 * 3600) - h * (3600) - m*(60));
+
+        if (y > 0) {
+            result += y + "years ";
+        }
+        if (d > 0) {
+            result += d + "days ";
+        }
+        if (h > 0) {
+            result += h + "hours ";
+        }
+        if (m > 0) {
+            result += m + "minutes ";
+        }
+        if (s > 0) {
+            result += s + "seconds ";
+        }
+
+        return result;
+    }
 
     public String getFullTime(int seconds) {
         String result = "";
@@ -97,8 +125,6 @@ public class ControlCenter {
     public void createDump(String name, int seconds, int accuracy, int stepDuration, List<CalculationsPlanet> calculationsPlanets) {
         long startTime = System.currentTimeMillis();
 
-
-
         Dump dump = new Dump(name, stepDuration);
         System.out.println("### Creating Dump ###");
         System.out.println("Name: " + name);
@@ -121,6 +147,7 @@ public class ControlCenter {
         System.out.println();
 
         int percent = 1;
+        long lastPercent = System.currentTimeMillis();
         for (int i = 1; i < seconds; i++) {
             if (i % accuracy == 0) {
                 processNextSecond(calculationsPlanets, true);
@@ -136,9 +163,13 @@ public class ControlCenter {
                 }
             }
 
+
             if (seconds / 100 * percent == i) {
                 if (percent % percentPrintFrequency == 0) { // percent frequency
-                    System.out.println(percent + "% complete.");
+                    System.out.print(percent + "% complete. Left: ");
+                    System.out.println(getFullTimeComplete(
+                            (int) ((System.currentTimeMillis() - lastPercent) / percent * (100 - percent) / 1000.0f) + 1));
+//                    lastPercent = System.currentTimeMillis();
                 }
 
                 percent += 1;
@@ -449,10 +480,10 @@ public class ControlCenter {
     }
 
 
-    public List<CalculationsPlanet> initRandomObjects() {
+    public List<CalculationsPlanet> initRandomObjects(int amount) {
         List<CalculationsPlanet> list = new ArrayList<>();
 
-        for (int i = 0; i < 25; i++) {
+        for (int i = 0; i < amount; i++) {
             list.add(generateRandomObject(1.827e12d, 2.41e4d));
         }
 

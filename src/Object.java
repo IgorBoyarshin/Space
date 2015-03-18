@@ -112,8 +112,8 @@ public class Object {
 
         Shader.main.enable();
 
-        Shader.main.setUniform1f("applyLighting", 0.0f);
-        Shader.main.setUniform3f("color", color);
+        Shader.main.setUniform1f("applyLighting", 1.0f);
+        Shader.main.setUniform3f("color", new Vector3f(1.0f, 0.0f, 0.0f));
 
         if (mode == MODE_MAIN) {
             Shader.main.setUniformMat4f("objectMatrix", theObject);
